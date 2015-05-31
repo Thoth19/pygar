@@ -4,6 +4,7 @@ An Agar.io client written in Python 3.4.3.
 # Dependencies
 - pip install requests
 - pip install websocket-client
+- pygame for 3.4.3
 
 # License
 Please see 
