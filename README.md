@@ -1,5 +1,9 @@
-# pygar
-An Agar.io client written in Python.
+# Pygar
+An Agar.io client written in Python 3.4.3.
+
+# Dependencies
+- pip install requests
+- pip install websocket-client
 
 # License
 Please see 
