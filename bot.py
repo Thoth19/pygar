@@ -158,7 +158,7 @@ class Bot(object):
             self.last_update = self.game.timestamp
             self.parse_mergers()
             self.parse_updates()
-            self.parse_alives()
+            self.parse_deaths()
         elif id == 17:
             x = b.read_float()
             y = b.read_float()
@@ -327,24 +327,21 @@ class Bot(object):
                         cell.owner = self
                         self.game.add_id(id)
 
-    def parse_alives(self):
+    def parse_deaths(self):
         if self.buffer.input_size() <= 0:
             return 
         amount = self.buffer.read_int()
-        alives = []
         for i in range(0, amount):
-            id = self.buffer.read_int()
-            if self.has_stamp(id):  # why are we checking if we know it?.. if we dont, we cant update timestamp
-                # update timestamp
-                self.update_stamp(id, self.game.timestamp)
-
-                # update global cells timestamp
-                cell = self.game.get_cell(id)
-                cell.timestamp = self.game.timestamp
-
-                # append etc
-                alives.append(id)
-        return alives
+            id = self.buffer.read_int() 
+            
+            if self.has_stamp(id):  # if we know it, remove it locally
+                # remove locally
+                self.remove_stamp(id)
+                
+                # remove globally
+                if self.game.has_cell(id):
+                    cell = self.game.get_cell(id)
+                    cell.remove_watcher(self)
 
     def send_init(self):
         if self.is_connected() and not self.has_sent_init:
