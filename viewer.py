@@ -19,7 +19,7 @@ class Viewer(object):
 
         # text
         pygame.font.init()
-        self.font = pygame.font.Font('arial.ttf', 9)
+        self.font = pygame.font.Font('Arial', 9)
 
     def run(self):
         while self.render():
