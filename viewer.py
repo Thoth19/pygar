@@ -19,7 +19,7 @@ class Viewer(object):
 
         # text
         pygame.font.init()
-        self.font = pygame.font.Font('Arial', 9)
+        self.font = pygame.font.SysFont('Arial', 9)
 
     def run(self):
         while self.render():
@@ -68,7 +68,7 @@ class GameViewer(object):
 
         # font
         pygame.font.init()
-        self.font = pygame.font.Font('arial.ttf', 9)
+        self.font = pygame.font.SysFont('Arial', 9)
 
         # fps
         self.frames = 0
@@ -132,7 +132,10 @@ class GameViewer(object):
                 color = (255, 0, 0)  # red
 
             # draw cell
-            pygame.draw.circle(self.screen, cell.color, (int(cell.x/scale), int(cell.y/scale)), int(cell.size/scale))
+            size = cell.size / scale
+            if size < 1:
+                size = 1
+            pygame.draw.circle(self.screen, cell.color, (int(cell.x/scale), int(cell.y/scale)), int(size))
 
             # draw name
             if cell.name is not '':
