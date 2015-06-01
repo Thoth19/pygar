@@ -9,6 +9,7 @@ from viewer import GameViewer
 # server = Server()
 
 r = requests.post('http://m.agar.io/', data='EU-London')
+print(r.text)
 ip, port = r.text.split(':')
 
 game = Game(None)

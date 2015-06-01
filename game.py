@@ -71,6 +71,7 @@ class Game(object):
     def is_running(self):
         return self.running
 
+    # version 520
     def update(self):
         act = False
         last_act = 0
@@ -107,6 +108,7 @@ class Game(object):
             if len(destroy) > 0:
                 print('[game/update] destroying cells: ' + str(destroy))
             for id in destroy:
+                pass
                 self.remove_cell(id)
 
     def add_bot(self):
@@ -126,14 +128,17 @@ class Game(object):
             self.bots.remove(lowest)
             return True
         return False
-
+    
+    # version 520
     def transfer(self, game):
+        # transfer everyting from this self to game
+        
         game.pause = True
         self.pause = True
 
         while not (game.paused and self.paused):
             pass
-
+        
         for id in self.ids:
             if not game.has_id(id):
                 game.add_id(id)
@@ -156,7 +161,7 @@ class Game(object):
                     other_cell.color = cell.color
                     other_cell.virus = cell.virus
                     other_cell.name = cell.name
-                    # if their version is more up-to-date, do nothing
+                # if their version is more up-to-date, do nothing
 
                 # set cell as owner of other_cell
                 if not cell.owner == None:
@@ -164,7 +169,7 @@ class Game(object):
 
                 # add watchers (bots)
                 for bot in cell.watchers:
-                        other_cell.add_watcher(bot)
+                    other_cell.add_watcher(bot)
 
         for bot in self.bots:
             if not bot in game.bots:
@@ -185,7 +190,8 @@ class Game(object):
         # unpause game
         self.pause = False
         game.pause = False
-
+    
+    # version 520
     def transfer_bot(self, bot, game):
         self.pause = True
         game.pause = True
@@ -200,20 +206,29 @@ class Game(object):
         for id in bot.ids:
             self.remove_id(id)
             game.add_id(id)
+        
+        # move over all cells seen by this bot
+        for old in self.cells:
+            if old.has_watcher(bot):
+                # cell is seen by this bot
+                # remove bot from watchers
+                old.remove_watcher(bot)
+                
+                # check if the other game has it
+                if game.has_cell(old.id):
+                    # it does
+                    # get cell and add watcher
+                    cell = game.get_cell(old.id)
+                    cell.add_wacher(bot)
+                else:
+                    # it doesnt
+                    # create cell objects
+                    cell = Cell(old.id, old.x, old.y, old.size, old.color, old.virus, old.name)
+                    cell.timestamp = old.timestamp
+                    cell.add_watcher(bot)
 
-        # move over all the bots seen cells
-        for id in bot.stamps:
-            old = self.get_cell(id)
-            old.remove_watcher(bot)
-
-            if game.has_cell(id):
-                cell = game.get_cell(id)
-                cell.add_watcher(bot)
-            else:
-                cell = Cell(old.id, old.x, old.y, old.size, old.color, old.virus, old.name)
-                cell.timestamp = old.timestamp
-                cell.add_watcher(bot)
-                game.add_cell(cell)
+                    # add cell to game
+                    game.add_cell(cell)      
 
     def get_bot_count(self):
         return len(self.bots)

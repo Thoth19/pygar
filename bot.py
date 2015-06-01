@@ -1,4 +1,4 @@
-__author__ = 'RAEON'
+_author__ = 'RAEON'
 
 from session import Session
 from buffer import Buffer
@@ -33,7 +33,7 @@ class Bot(object):
 
         # cell information
         self.ids = []  # list of ids (to get cell, query id in all_cells)
-        self.stamps = {}  # maps cell id to cell
+        # no longer track cell ids
         self.ladder = []
         self.mode = 'ffa'
 
@@ -56,7 +56,6 @@ class Bot(object):
 
                 # clear our lists
                 self.ids = []
-                self.stamps = {}
                 self.ladder = {}
 
                 # try and become ALIIIIVE!
@@ -66,33 +65,29 @@ class Bot(object):
                 return True
             print('[' + self.name + '] Failed to connect')
         return False
-
+    
+    # version 520
     def disconnect(self):
         if self.is_connected():
             # disconnect
             self.session.disconnect()
-
+            
+            # remove ourselves from all cell watchers
+            # in game cell objects
+            for cell in self.game.cells.values():
+                cell.remove_watcher(self)
+            
             # remove all bot.ids from game.ids
             for id in self.ids:
                 self.game.remove_id(id)
-
-            # remove watcher from all seen cells
-            for id, stamp in self.stamps.items():
-                # get cell
-                cell = self.game.get_cell(id)
-
-                # remove watcher
-                cell.remove_watcher(self)
-
-                # if we were the owner, remove owner tag
                 if self.has_id(id):
-                    cell.owner = None
-
-                # dont remove cell if unwatched: it would be redundant
-                # game.update removes it for us
+                    self.remove_id(id)
+                    self.game.remove_id(id)
+            # game deletes all cells w/o watchers
             return True
         return False
-
+    
+    # version 520
     def update(self):
         # connect if not connected
         if not self.is_connected():
@@ -119,33 +114,8 @@ class Bot(object):
             # if we didn't receive an update this tick, we dont need to check for destroys.
             return
 
-        # remove dead cells
-        destroy = []
-        for id, stamp in self.stamps.items():
-            if stamp < self.game.timestamp:
-                # print('[' + self.name + '] losing track of cell #' + str(id) + ': stamp=' + str(stamp) + ', gamestamp=' + str(self.game.timestamp))
-                destroy.append(id)
-
-        for id in destroy:
-            # remove local timestamp
-            self.remove_stamp(id)
-
-            # tell game we arent watching the cell anymore
-            cell = self.game.get_cell(id)
-            cell.remove_watcher(self)
-
-            # check if it was us who died
-            if self.has_id(cell.id):
-                self.remove_id(cell.id)
-                self.game.remove_id(cell.id)
-                print('[bot/update] lost cell', cell.id)
-                if len(self.ids) == 0:
-                    self.send_spawn()
-                    print('[bot/update] respawning')
-
-
-            # dont remove global_cell, game will do this on it's own
-            # print('[' + self.name + '] lost track of cell #' + str(id))
+        # removing dead cells no longer happens in bot.py
+        # cells are only removed on a packet, or when there are no watchers (only on disconnect)
         return True
 
     def act(self):
@@ -168,17 +138,13 @@ class Bot(object):
             for id in self.ids:
                 self.game.remove_id(id)
             self.ids = []
-
-            for id in self.stamps:
-                cell = self.game.get_cell(id)
-                cell.remove_watcher(self)
-            self.stamps = []
-            print('[20]')
+            
+            print('[20] cell reset')
         elif id == 32:
             id = b.read_int()
             self.add_id(id)
             self.game.add_id(id)
-            print('[32]', id)
+            print('[32] ?', id)
         elif id == 49:
             self.ladder = {}
             self.mode = 'ffa'
@@ -202,37 +168,33 @@ class Bot(object):
                 self.game.mode = 'teams'
             #print('[50]')
         elif id == 64:
-            print('[64] viewport')
             self.game.view_x = self.view_x = b.read_double()
             self.game.view_y = self.view_y = b.read_double()
             self.game.view_w = self.view_w = b.read_double()
             self.game.view_h = self.view_h = b.read_double()
-
-
+            print('[64] viewport:', self.view_x, self.view_y, self.view_w, self.view_h)
+    
+    # version 520
     def parse_mergers(self):
         amount = self.buffer.read_short()
         for i in range(0, amount):
             hunter, prey = self.buffer.read_int(), self.buffer.read_int()
-            if hunter in self.stamps and prey in self.stamps:  # if we both know these cells
-                # no point in updating hunter's stamp, because it will be updated in parse_updates.
-
-                # remove timestamp for eaten cell
-                self.remove_stamp(prey)
-
-                # remove eaten cell from global cells
+            if self.game.has_id(hunter) and self.game.has_id(prey):  # if we both know these cells
+                # self.ids: our own cells ids
+                # game.ids: all bot cell ids
+                # game.cells: all global cell objects
+                
+                # game.cells: remove eaten cell from global cells
                 cell = self.game.get_cell(prey)  # prey = prey_id
                 self.game.remove_cell(prey)
-
-                # remove cell id if it is our own
+                
+                # self.ids/game.ids: remove cell id from bot and game if it is our own
                 if self.has_id(cell.id):
                     self.remove_id(cell.id)
-
-                # remove cell id if it is in game.ids
-                if self.game.has_id(cell.id):
                     self.game.remove_id(cell.id)
-
                 print('[game/parse_mergers] %d ate %d' % (hunter, prey))
-
+    
+    # version 520
     def parse_updates(self):
         b = self.buffer
         while True:
@@ -266,14 +228,15 @@ class Bot(object):
 
             # read name
             name = b.read_string()
+            
+            # if cell is not known globally:
+            #   create global instance
+            # if cell in self.ids:
+            #   set owner to self
 
-            # check if this cell is known locally
-            if self.has_stamp(id):
-                # known locally
-                # from that, we can conclude it is known globally
-
-                # update local timestamp
-                self.update_stamp(id, self.game.timestamp)
+            # check if this cell is known globally
+            if self.game.has_cell(id):
+                # known globally
 
                 # update global cell
                 cell = self.game.get_cell(id)
@@ -285,63 +248,39 @@ class Bot(object):
                 cell.agitated = agitated
                 cell.timestamp = self.game.timestamp
             else:
-                # not known locally
+                # not known globally
+                
+                # create new global cell
+                cell = Cell(id, x, y, size, color, virus, agitated, name)
+                cell.watchers.append(self)
+                cell.timestamp = self.game.timestamp
 
-                # create local timestamp
-                self.add_stamp(id, self.game.timestamp)
-
-                if self.game.has_cell(id):
-                    # not known locally (but already added)
-                    # known globally
-
-                    # update global cell
-                    cell = self.game.get_cell(id)
-                    cell.add_watcher(self)  # add ourselves as watcher (because it wasnt know locally)
-                    cell.x = x
-                    cell.y = y
-                    cell.size = size
-                    cell.color = color
-                    cell.virus = virus
-                    cell.agitated = agitated
-                    cell.timestamp = self.game.timestamp
-
-                    # check if cell is ours. this can happen when another bot sees this cell
-                    # before we do, yet it is in our id list.
-                    if self.has_id(id):
-                        cell.owner = self
-                        self.game.add_id(id)
-                else:
-                    # not known locally (but already added)
-                    # not known globally
-
-                    # create global cell instance
-                    cell = Cell(id, x, y, size, color, virus, agitated, name)
-                    cell.watchers.append(self)
-                    cell.timestamp = self.game.timestamp
-
-                    # add global cell to global cell list
-                    self.game.add_cell(cell)
-
-                    # check if cell is ours. if so, change owner and call game.on_bot_spawn
-                    if self.has_id(id):
-                        cell.owner = self
-                        self.game.add_id(id)
-
+                # set owner if it is ours
+                if self.has_id(id):
+                    cell.owner = self
+                
+                # add cell to global cells
+                self.game.add_cell(cell)
+    
+    # version 520
     def parse_deaths(self):
-        if self.buffer.input_size() <= 0:
-            return 
         amount = self.buffer.read_int()
         for i in range(0, amount):
             id = self.buffer.read_int() 
             
-            if self.has_stamp(id):  # if we know it, remove it locally
-                # remove locally
-                self.remove_stamp(id)
-                
-                # remove globally
-                if self.game.has_cell(id):
-                    cell = self.game.get_cell(id)
-                    cell.remove_watcher(self)
+            # if it is one of ours
+            if self.has_id(id):
+                self.remove_id(id)
+                self.game.remove_id(id)
+                if len(self.ids) == 0:
+                    self.send_spawn()
+                    print("[bot/parse_deaths] No cells left, respawning")
+            
+            # remove cell globally
+            if self.game.has_cell(id):
+                cell = self.game.get_cell(id)
+                cell.remove_watcher(self)
+                self.game.remove_cell(id)
 
     def send_init(self):
         if self.is_connected() and not self.has_sent_init:
@@ -359,7 +298,8 @@ class Bot(object):
 
     def send_spawn(self):
         if self.is_connected() and (time.time() - self.last_sent_spawn > 4):
-            #not self.is_alive() and \
+            for cell in self.game.cells.values():
+                cell.remove_watcher(self)
             self.last_sent_spawn = time.time()
             self.buffer.write_string(self.name)
             self.buffer.flush_session(self.session)
@@ -417,14 +357,14 @@ class Bot(object):
     def get_center(self):
         x = 0
         y = 0
-        amount = max(1, len(self.ids))  # prevent div by zero
+        amount = 0
         for id in self.ids:
             cell = self.game.get_cell(id)
             if cell:
                 x += cell.x
                 y += cell.y
-            else:
-                amount -= 1
+                amount += 1
+        amount = max(1, amount)  # prevent div by zero
         return x/amount, y/amount
 
     def get_mass(self):
@@ -455,30 +395,4 @@ class Bot(object):
 
     def has_id(self, id):
         return id in self.ids
-
-    def add_stamp(self, id, stamp):
-        if not self.has_stamp(id):
-            self.stamps[id] = stamp
-            return True
-        return False
-
-    def remove_stamp(self, id):
-        if self.has_stamp(id):
-            del self.stamps[id]
-            return True
-        return False
-
-    def update_stamp(self, id, stamp):
-        if self.has_stamp(id):
-            self.stamps[id] = stamp
-            return True
-        return False
-
-    def get_stamp(self, id):
-        if self.has_stamp(id):
-            return self.stamps[id]
-        return None
-
-    def has_stamp(self, id):
-        return id in self.stamps
 

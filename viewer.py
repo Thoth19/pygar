@@ -19,7 +19,7 @@ class Viewer(object):
 
         # text
         pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 9)
+        self.font = pygame.font.SysFont('Arial', 12)
 
     def run(self):
         while self.render():
@@ -68,7 +68,7 @@ class GameViewer(object):
 
         # font
         pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 9)
+        self.font = pygame.font.SysFont('Arial', 12)
 
         # fps
         self.frames = 0
@@ -112,7 +112,8 @@ class GameViewer(object):
         self.screen.blit(self.background, (0, 0))
 
         # draw cells
-        for cell in self.game.cells.copy().values():
+        values = self.game.cells.copy().values()
+        for cell in values:
             # print('rendering thing:', cell)
             # draw circle
             # print('[cell]', cell.x/scale, cell.y/scale, cell.color, cell.size/scale, scale)
@@ -132,10 +133,7 @@ class GameViewer(object):
                 color = (255, 0, 0)  # red
 
             # draw cell
-            size = cell.size / scale
-            if size < 1:
-                size = 1
-            pygame.draw.circle(self.screen, cell.color, (int(cell.x/scale), int(cell.y/scale)), int(size))
+            pygame.draw.circle(self.screen, cell.color, (int(cell.x/scale), int(cell.y/scale)), int(cell.size/scale))
 
             # draw name
             if cell.name is not '':
@@ -182,6 +180,7 @@ class GameViewer(object):
         lines.append('Bot/Cell_IDs: ' + str(self.game.bots[0].ids))
         lines.append('Game/Cell_IDs: ' + str(self.game.ids))
         lines.append('Server: ' + self.game.host + ':' + str(self.game.port))
+        lines.append('Pos: ' + str(self.game.bots[0].get_center()))
         self.draw_lines(lines)
 
     def draw_lines(self, lines):
