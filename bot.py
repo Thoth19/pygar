@@ -330,12 +330,9 @@ class Bot(object):
     def parse_alives(self):
         if self.buffer.input_size() <= 0:
             return 
-        print("parse_alives bytes: " + str(self.buffer.input_size())) 
         amount = self.buffer.read_int()
-        print("parse_alives amount: " + str(amount))
         alives = []
         for i in range(0, amount):
-            print("parse_alives current: " + str(i))
             id = self.buffer.read_int()
             if self.has_stamp(id):  # why are we checking if we know it?.. if we dont, we cant update timestamp
                 # update timestamp
