@@ -2,53 +2,8 @@ __author__ = 'RAEON'
 
 import pygame
 from pygame.locals import *
-
-class Viewer(object):
-
-    def __init__(self):
-        pygame.init()
-
-        # screen
-        self.resolution = self.width, self.height = 640, 480
-        self.screen = pygame.display.set_mode(self.resolution)
-
-        # background
-        self.background = pygame.Surface(self.resolution)
-        self.background.convert()
-        self.background.fill((0, 0, 0))
-
-        # text
-        pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 12)
-
-    def run(self):
-        while self.render():
-            pass
-
-    def render(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                return False
-
-        # draw background to screen
-        self.screen.blit(self.background, (0, 0))
-
-        # draw string
-        text = self.font.render("text", 0, (255, 0, 0))
-        text_rect = text.get_rect()
-        text_rect.centerx = self.screen.get_rect().centerx
-        text_rect.centery = self.screen.get_rect().centery
-        self.screen.blit(text, text_rect)
-
-        # draw circle
-        pygame.draw.circle(self.screen, (255, 255, 255), (320, 120), 50)
-
-        # flip
-        pygame.display.flip()
-        return True
-
-
 from time import time, sleep
+
 class GameViewer(object):
 
     def __init__(self, game):
@@ -68,22 +23,27 @@ class GameViewer(object):
 
         # font
         pygame.font.init()
-        self.font = pygame.font.SysFont('Arial', 12)
+        self.font_size = 16
+        self.font = pygame.font.SysFont('Arial', self.font_size)
 
         # fps
         self.frames = 0
         self.last_frames = 0
         self.timer = 0
 
+        # render flags
+        self.render_special = False
+
     def run(self):
         while self.render():
             pass
+        pygame.quit()
 
     def render(self):
         scale = self.game.view_w / 800
         if scale == 0:
             scale = 2
-
+         
         # handle events (user input)
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -105,7 +65,11 @@ class GameViewer(object):
                 elif event.key == K_r:
                     for bot in self.game.bots:
                         bot.send_spawn()
-
+                elif event.key == K_f:
+                    self.render_special = True
+            elif event.type == KEYUP:
+                if event.key == K_f:
+                    self.render_special = False
         # handle output (rendering)
 
         # clear screen
@@ -144,13 +108,22 @@ class GameViewer(object):
                 text_rect.centery = int((cell.y - cell.size)/scale - 5)
                 self.screen.blit(text, text_rect)
 
-                # render mass in cell
-                text = self.font.render(str(round(cell.size)), 0, color)
+                # render mass under cell
+                num = str(round(cell.size))
+                if self.render_special:
+                    num = str(cell.id)
+                text = self.font.render(num, 0, color)
                 text_rect = text.get_rect()
                 text_rect.centerx = int(cell.x/scale)
-                text_rect.centery = int((cell.y + cell.size)/scale + 5)
+                text_rect.centery = int((cell.y + cell.size)/scale + (self.font_size / 2))
                 self.screen.blit(text, text_rect)
-
+                
+                if self.render_special:
+                    text = self.font.render(str(len(cell.watchers)), 0, color)
+                    text_rect = text.get_rect()
+                    text_rect.centerx = int(cell.x/scale)
+                    text_rect.centery = int((cell.y + cell.size)/scale + 3 + (self.font_size))
+                    self.screen.blit(text, text_rect)
 
         # update fps
         self.frames += 1
@@ -160,7 +133,7 @@ class GameViewer(object):
             self.frames = 0
 
         self.draw_debug()
-        # self.draw_leaderboard()
+        self.draw_leaderboard()
 
         # flip buffers
         pygame.display.flip()
@@ -191,14 +164,15 @@ class GameViewer(object):
             text_rect = text.get_rect()
             text_rect.left = x
             text_rect.top = y
-            y += 10
+            y += self.font_size - 3
             self.screen.blit(text, text_rect)
 
     def draw_leaderboard(self):
         ladder = self.game.ladder
         x = 800 - 5
-        y = 5
+        y = self.font_size / 2
         i = 0
+
         for name in ladder.values():
             i += 1
             text = self.font.render(name + ' #' + str(i), 0, (255, 255, 255))
@@ -206,4 +180,4 @@ class GameViewer(object):
             text_rect.right = x
             text_rect.top = y
             self.screen.blit(text, text_rect)
-            y += 10
+            y += self.font_size - 3
