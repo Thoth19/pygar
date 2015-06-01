@@ -144,7 +144,7 @@ class Bot(object):
             id = b.read_int()
             self.add_id(id)
             self.game.add_id(id)
-            print('[32] ?', id)
+            print('[32] ', id)
         elif id == 49:
             self.ladder = {}
             self.mode = 'ffa'
