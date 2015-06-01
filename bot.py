@@ -1,4 +1,4 @@
-_author__ = 'RAEON'
+__author__ = 'RAEON'
 
 from session import Session
 from buffer import Buffer
