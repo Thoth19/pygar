@@ -29,19 +29,44 @@ class GameViewer(object):
         # fps
         self.frames = 0
         self.last_frames = 0
-        self.timer = 0
+        self.last_time = 0.0
+        self.fps = 0
+
+        # updates
+        self.bot_updates = 0
 
         # render flags
         self.render_special = False
 
         self.scale = 0
 
-	# center view on bot
+        # center view on bot
         self.centered = False
 
+        # display game data
+        self.display_data = False
+
     def run(self):
-        while self.render():
-            pass
+        lastsecondtick = time()
+        while True:
+          if (time() - self.last_time) > 0.0:
+
+            self.render()
+
+            # check to see if an entire second has passed in order to
+            # increment fps counter and bot updates counter
+            if (time() - lastsecondtick > 1.0):
+              self.fps = self.frames
+              self.frames = 0
+              lastsecondtick = time()
+
+              bot = self.game.bots[0]
+              self.bot_updates = bot.n_updates
+              bot.n_updates = 0
+
+            self.frames += 1
+            self.last_time = time()
+
         pygame.quit()
 
     def render(self):
@@ -79,6 +104,8 @@ class GameViewer(object):
                     self.render_special = True
                 elif event.key == K_z:
                     self.centered = not self.centered
+                elif event.key == K_d:
+                    self.display_data = not self.display_data
             elif event.type == KEYUP:
                 if event.key == K_f:
                     self.render_special = False
@@ -90,7 +117,9 @@ class GameViewer(object):
               if event.button == 5:
                 if self.centered:
                   self.scale *= 1.1
-# handle output (rendering)
+        
+        
+        # handle output (rendering)
 
         # clear screen
         self.screen.blit(self.background, (0, 0))
@@ -99,8 +128,8 @@ class GameViewer(object):
         values = self.game.cells.copy().values()
 
         scale = self.scale
+        #print("rendering : " + str(len(values)) + " cells")
         for cell in values:
-            # print('rendering thing:', cell)
             # draw circle
             # print('[cell]', cell.x/scale, cell.y/scale, cell.color, cell.size/scale, scale)
 
@@ -165,14 +194,13 @@ class GameViewer(object):
                     self.screen.blit(text, text_rect)
 
         # update fps
-        self.frames += 1
-        if time() - self.timer > 1:
-            self.timer = time()
-            self.last_frames = self.frames
-            self.frames = 0
 
-        self.draw_debug()
+        #self.draw_debug()
         self.draw_leaderboard()
+
+        #draw display data
+        if (self.display_data):
+          self.draw_displaydata()
 
         # flip buffers
         pygame.display.flip()
@@ -212,11 +240,31 @@ class GameViewer(object):
         y = self.font_size / 2
         i = 0
 
-        for name in ladder.values():
-            i += 1
-            text = self.font.render(name + ' #' + str(i), 0, (255, 255, 255))
-            text_rect = text.get_rect()
-            text_rect.right = x
-            text_rect.top = y
-            self.screen.blit(text, text_rect)
-            y += self.font_size - 3
+        if hasattr(ladder, 'values'):
+          for name in ladder.values():
+              i += 1
+              text = self.font.render(name + ' #' + str(i), 0, (255, 255, 255))
+              text_rect = text.get_rect()
+              text_rect.right = x
+              text_rect.top = y
+              self.screen.blit(text, text_rect)
+              y += self.font_size - 3
+
+    def draw_displaydata(self):
+
+      y = 0
+
+      text = self.font.render("frames per second : " + str(self.fps), 0, (255, 255, 255))
+      text_rect = text.get_rect()
+      text_rect.left = 0
+      text_rect.top = y
+      self.screen.blit(text, text_rect)
+      y += self.font_size
+
+      text = self.font.render("updates per second : " + str(self.bot_updates), 0, (255, 255, 255))
+      text_rect = text.get_rect()
+      text_rect.left = 0
+      text_rect.top = y
+      self.screen.blit(text, text_rect)
+      y += self.font_size
+

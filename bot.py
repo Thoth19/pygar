@@ -62,6 +62,8 @@ class Bot(object):
                 self.send_init()
                 self.send_spawn()
                 self.send_move_relative(0, 0)  # cuz fuck moving, thats why
+
+                self.n_updates = 0
                 return True
             print('[' + self.name + '] Failed to connect')
         return False
@@ -103,6 +105,8 @@ class Bot(object):
         all = []
         all.extend(self.session.inbound)
         self.session.inbound = self.session.inbound[len(all):]
+
+        self.n_updates += len(all)
 
         # parse all data
         for data in all:
