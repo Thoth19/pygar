@@ -10,6 +10,7 @@ An Agar.io client written in Python 3.4.3. See dependencies for things you need 
 - R: Force respawn in case you die but don't respawn (or don't spawn at all).
 - W: Throw mass
 - Z: Toggle Centered Mode
+- D: Toggle Display Data
 - Space: Split
 - Mouse: Move your mouse to where you want to move.
 
