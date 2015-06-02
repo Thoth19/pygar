@@ -34,15 +34,21 @@ class GameViewer(object):
         # render flags
         self.render_special = False
 
+        self.scale = 0
+
+	# center view on bot
+        self.centered = False
+
     def run(self):
         while self.render():
             pass
         pygame.quit()
 
     def render(self):
-        scale = self.game.view_w / 800
-        if scale == 0:
-            scale = 2
+        if self.scale == 0:
+            self.scale = self.game.view_w / 800
+            if self.scale == 0:
+              self.scale = 2
          
         # handle events (user input)
         for event in pygame.event.get():
@@ -50,11 +56,15 @@ class GameViewer(object):
                 return False
             elif event.type == MOUSEMOTION:
                 x, y = event.pos
-                x *= scale
-                y *= scale
+                bot = self.game.bots[0]
+                bot_x, bot_y = bot.get_center()
                 for bot in self.game.bots:
                     #bot.send_move_relative(5, 5)
-                    bot.send_move(x, y)
+                    if (self.centered == False):
+                      bot.send_move(x*self.scale, y*self.scale)
+                    else:
+                      bot.send_move((x - self.width/2)*self.scale + bot_x, (y
+                        - self.height/2)*self.scale + bot_y)
             elif event.type == KEYDOWN:
                 if event.key == K_w:
                     for bot in self.game.bots:
@@ -67,16 +77,28 @@ class GameViewer(object):
                         bot.send_spawn()
                 elif event.key == K_f:
                     self.render_special = True
+                elif event.key == K_z:
+                    self.centered = not self.centered
             elif event.type == KEYUP:
                 if event.key == K_f:
                     self.render_special = False
-        # handle output (rendering)
+
+            if event.type == MOUSEBUTTONDOWN:
+              if event.button == 4:
+                if self.centered:
+                  self.scale /= 1.1
+              if event.button == 5:
+                if self.centered:
+                  self.scale *= 1.1
+# handle output (rendering)
 
         # clear screen
         self.screen.blit(self.background, (0, 0))
 
         # draw cells
         values = self.game.cells.copy().values()
+
+        scale = self.scale
         for cell in values:
             # print('rendering thing:', cell)
             # draw circle
@@ -96,16 +118,29 @@ class GameViewer(object):
             elif smallest_size < cell.size:
                 color = (255, 0, 0)  # red
 
+            bot = self.game.bots[0]
+            x, y = bot.get_center()
+            
             # draw cell
-            pygame.draw.circle(self.screen, cell.color, (int(cell.x/scale), int(cell.y/scale)), int(cell.size/scale))
+            if (self.centered == False):
+                pygame.draw.circle(self.screen, cell.color, (int(cell.x/scale), int(cell.y/scale)), int(cell.size/scale))
+            else:
+                pygame.draw.circle(self.screen, cell.color, (int((cell.x - x)/scale + self.width/2),
+                                                             int((cell.y - y)/scale + self.height/2)),
+                                                             int(cell.size/scale))
 
             # draw name
             if cell.name is not '':
                 # render name above cell
                 text = self.font.render(cell.name, 0, color)
                 text_rect = text.get_rect()
-                text_rect.centerx = int(cell.x/scale)
-                text_rect.centery = int((cell.y - cell.size)/scale - 5)
+
+                if (self.centered == False):
+                  text_rect.centerx = int(cell.x/scale)
+                  text_rect.centery = int((cell.y - cell.size)/scale - 5)
+                else:
+                  text_rect.centerx = int((cell.x - x)/scale + self.width/2)
+                  text_rect.centery = int((cell.y - cell.size - y)/scale - 5 + self.height/2) 
                 self.screen.blit(text, text_rect)
 
                 # render mass under cell
@@ -114,8 +149,12 @@ class GameViewer(object):
                     num = str(cell.id)
                 text = self.font.render(num, 0, color)
                 text_rect = text.get_rect()
-                text_rect.centerx = int(cell.x/scale)
-                text_rect.centery = int((cell.y + cell.size)/scale + (self.font_size / 2))
+                if (self.centered == False):
+                  text_rect.centerx = int(cell.x/scale)
+                  text_rect.centery = int((cell.y + cell.size)/scale + (self.font_size / 2))
+                else:
+                  text_rect.centerx = int((cell.x - x)/scale + self.width/2)
+                  text_rect.centery = int((cell.y - y + cell.size)/scale + (self.font_size/2) + self.height/2)
                 self.screen.blit(text, text_rect)
                 
                 if self.render_special:
