@@ -10,7 +10,7 @@ from viewer import GameViewer
 parser = argparse.ArgumentParser(description="Agar.io client")
 parser.add_argument('-i', '--ip', help="specify server ip")
 parser.add_argument('-p', '--port', help="specify server port")
-parser.add_argument('-l', '--location', help="automatic server location", default='EU-London')
+parser.add_argument('-l', '--location', help="automatic server location", default='US-West')
 parser.add_argument('-n', '--bots', type=int, help="number of bots", default=1)
 parser.add_argument('--no-gui', dest='gui', action='store_false', help="don't load gui")
 args = parser.parse_args()
@@ -27,12 +27,12 @@ else:
     ip, port = r.text.split(':')
 
 # server = Server()
-
+names = ["qwertyu","bob", "joe", "steve"]
 
 game = Game(None)
 game.start(ip, port)
 for i in range(args.bots):
-    game.add_bot()
+    game.add_bot(names[i])
 
 if args.gui:
     vi = GameViewer(game)
