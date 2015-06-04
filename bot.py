@@ -18,7 +18,7 @@ class Bot(object):
         self.buffer = Buffer()
 
         # game information
-        self.name = 'Test'  #''.join([random.choice('0123456789abcdefghijlkmnopqrstuvwxyz') for i in range(8)])
+        self.name = 'timmy'.join([random.choice('0123456789abcdefghijlkmnopqrstuvwxyz') for i in range(8)])
         self.last_x = 0  # last sent mouse X coordinate
         self.last_y = 0  # last sent mouse Y coordinate
         self.view_x = 0  # viewport x
@@ -124,6 +124,15 @@ class Bot(object):
 
     def act(self):
         # todo: write AI
+        self.send_move_relative(-1000,-1000)
+        #The screen looks like this
+        #___________________
+        #0              11163
+        #
+        #
+        #
+        #
+        #11163           
         pass
 
     def parse_packet(self, id):
