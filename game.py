@@ -111,8 +111,9 @@ class Game(object):
                 pass
                 self.remove_cell(id)
 
-    def add_bot(self):
+    def add_bot(self, name):
         bot = Bot(self)
+        bot.name = name
         self.bots.append(bot)
         if self.running:
             bot.connect(self.host, self.port)
