@@ -18,7 +18,7 @@ class Bot(object):
         self.buffer = Buffer()
 
         # game information
-        self.name = 'timmy'.join([random.choice('0123456789abcdefghijlkmnopqrstuvwxyz') for i in range(8)])
+        self.name = ''.join([random.choice('0123456789abcdefghijlkmnopqrstuvwxyz') for i in range(8)])
         self.last_x = 0  # last sent mouse X coordinate
         self.last_y = 0  # last sent mouse Y coordinate
         self.view_x = 0  # viewport x
@@ -124,7 +124,7 @@ class Bot(object):
 
     def act(self):
         # todo: write AI
-        self.send_move_relative(-1000,-1000)
+        # self.send_move_relative(-1000,-1000)
         #The screen looks like this
         #___________________
         #0              11163
@@ -132,8 +132,22 @@ class Bot(object):
         #
         #
         #
-        #11163           
-        pass
+        #11163    
+
+        min_dist = 2*11163**2    
+        x,y=self.get_center()
+        minx, miny = (0,0)
+        for identity in self.game.cells:
+            print("cvb")
+            x= self.game.get_cell(identity).x
+            y= self.game.get_cell(identity).y
+            if ((x,y) != self.get_center()) and min_dist > x**2 + y**2:
+                minx = x
+                miny = y
+                min_dist = x**2 + y**2
+                closest_identity = identity
+        print(minx, miny)
+        self.send_move(minx,miny)
 
     def parse_packet(self, id):
         b = self.buffer
@@ -379,6 +393,9 @@ class Bot(object):
                 amount += 1
         amount = max(1, amount)  # prevent div by zero
         return x/amount, y/amount
+
+    def get_distance(self, x, y):
+        return (self.get_center()[0]-x)**2 + (self.get_center()[1]-y)**2
 
     def get_mass(self):
         mass = 0
