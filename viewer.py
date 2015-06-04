@@ -12,6 +12,7 @@ class GameViewer(object):
         # initialize pygame
         pygame.init()
 
+
         # screen
         self.resolution = self.width, self.height = 800, 800
         self.screen = pygame.display.set_mode(self.resolution)
@@ -79,17 +80,21 @@ class GameViewer(object):
         for event in pygame.event.get():
             if event.type == QUIT:
                 return False
-            elif event.type == MOUSEMOTION:
-                x, y = event.pos
-                bot = self.game.bots[0]
-                bot_x, bot_y = bot.get_center()
-                for bot in self.game.bots:
-                    #bot.send_move_relative(5, 5)
-                    if (self.centered == False):
-                      bot.send_move(x*self.scale, y*self.scale)
-                    else:
-                      bot.send_move((x - self.width/2)*self.scale + bot_x, (y
-                        - self.height/2)*self.scale + bot_y)
+            # elif event.type == MOUSEMOTION:
+            #     x, y = event.pos
+            #     # x += 50
+            #     # y += 50
+            #     # Now the cell thinks its center is to the bott left, so 
+            #     # the moves are off
+            #     bot = self.game.bots[0]
+            #     bot_x, bot_y = bot.get_center()
+            #     for bot in self.game.bots:
+            #         #bot.send_move_relative(5, 5)
+            #         if (self.centered == False):
+            #           bot.send_move(x*self.scale, y*self.scale)
+            #         else:
+            #           bot.send_move((x - self.width/2)*self.scale + bot_x, (y
+            #             - self.height/2)*self.scale + bot_y)
             elif event.type == KEYDOWN:
                 if event.key == K_w:
                     for bot in self.game.bots:
@@ -267,6 +272,21 @@ class GameViewer(object):
       y += self.font_size
 
       text = self.font.render("updates per second : " + str(self.bot_updates), 0, (255, 255, 255))
+      text_rect = text.get_rect()
+      text_rect.left = 0
+      text_rect.top = y
+      self.screen.blit(text, text_rect)
+      y += self.font_size
+
+      #Bot 0 positions can be displayed
+      text = self.font.render("Bot0 x Pos : " + str(self.game.bots[0].get_center()[0]), 0, (255, 255, 255))
+      text_rect = text.get_rect()
+      text_rect.left = 0
+      text_rect.top = y
+      self.screen.blit(text, text_rect)
+      y += self.font_size
+
+      text = self.font.render("Bot0 y Pos : " + str(self.game.bots[0].get_center()[1]), 0, (255, 255, 255))
       text_rect = text.get_rect()
       text_rect.left = 0
       text_rect.top = y
