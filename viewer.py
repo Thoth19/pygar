@@ -106,6 +106,11 @@ class GameViewer(object):
                     self.centered = not self.centered
                 elif event.key == K_d:
                     self.display_data = not self.display_data
+                elif event.key == K_t:
+                    self.scale +=2
+                elif event.key == K_y:
+                    if self.scale >2:
+                      self.scale -=2
             elif event.type == KEYUP:
                 if event.key == K_f:
                     self.render_special = False
